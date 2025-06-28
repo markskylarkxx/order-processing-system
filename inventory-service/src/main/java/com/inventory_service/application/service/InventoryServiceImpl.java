@@ -1,9 +1,6 @@
 package com.inventory_service.application.service;
 
 import com.inventory_service.grpc.InventoryServiceGrpc;
-
-
-
 import com.inventory_service.domain.Product;
 import com.inventory_service.domain.ProductRepository;
 
@@ -29,7 +26,6 @@ public class InventoryServiceImpl extends InventoryServiceGrpc.InventoryServiceI
         StockResponse response = StockResponse.newBuilder()
                 .setQuantity(quantity)
                 .build();
-
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
