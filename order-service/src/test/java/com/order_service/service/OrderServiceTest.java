@@ -36,9 +36,6 @@ class OrderServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
     }
-
-    // ============ createOrder tests ===============
-
     @Test
     void createOrder_successful() {
         CreateOrder request = new CreateOrder();
@@ -125,8 +122,6 @@ class OrderServiceTest {
         verify(inventoryStub, times(1)).checkStock(any(StockRequest.class));
         verify(orderRepository, never()).save(any(Order.class));
     }
-
-    // ============ getOrderById test ===============
 
     @Test
     void getOrderById_found() {
