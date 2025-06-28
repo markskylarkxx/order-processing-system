@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.inventory_service.grpc";
+option java_outer_classname = "InventoryServiceProto";
+
+package inventory;
+
+service InventoryService {
+  rpc CheckStock (StockRequest) returns (StockResponse);
+}
+
+message StockRequest {
+  int32 itemId = 1;
+}
+
+message StockResponse {
+  int32 quantity = 1;
+}
