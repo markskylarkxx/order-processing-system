@@ -1,0 +1,20 @@
+<h1>Order List</h1>
+<button [routerLink]="['/create-order']">Create New Order</button>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Product ID</th>
+      <th>Quantity</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let order of orders">
+      <td>{{ order.id }}</td>
+      <td>{{ order.productId }}</td>
+      <td>{{ order.quantity }}</td>
+      <td>{{ order.status }}</td>
+    </tr>
+  </tbody>
+</table>

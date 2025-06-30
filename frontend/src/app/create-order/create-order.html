@@ -1,0 +1,18 @@
+<h1>Create New Order</h1>
+
+<form (ngSubmit)="submitOrder()">
+  <label>Product:
+    <select [(ngModel)]="order.productId" name="productId" required>
+      <option *ngFor="let product of products" [value]="product.id">{{ product.name }}</option>
+    </select>
+  </label>
+  <br/>
+  <label>Quantity:
+    <input type="number" [(ngModel)]="order.quantity" name="quantity" required />
+  </label>
+  <br/>
+  <button type="submit">Submit</button>
+</form>
+
+<br/>
+<button [routerLink]="['/']">Back to Order List</button>
