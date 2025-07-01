@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.*;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Arrays;
@@ -173,23 +174,25 @@ class OrderServiceTest {
 
         verify(orderRepository, times(1)).findById(999L);
     }
-
     @Test
-    void getAllOrders_returnsList() {
+    void getAllOrders_returnsPageOfOrders() {
         List<Order> orders = Arrays.asList(
                 Order.builder().id(1L).productId(1).quantity(10).status("CONFIRMED").build(),
                 Order.builder().id(2L).productId(2).quantity(20).status("CONFIRMED").build()
         );
+        Page<Order> page = new PageImpl<>(orders);
 
-        when(orderRepository.findAll()).thenReturn(orders);
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("id").descending());
+        when(orderRepository.findAll(pageable)).thenReturn(page);
 
-        List<Order> result = orderService.getAllOrders();
+        Page<Order> result = orderService.getAllOrders(0, 10);
 
         assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(1L, result.get(0).getId());
-        assertEquals(2L, result.get(1).getId());
+        assertEquals(2, result.getContent().size());
+        assertEquals(1L, result.getContent().get(0).getId());
+        assertEquals(2L, result.getContent().get(1).getId());
 
-        verify(orderRepository, times(1)).findAll();
+        verify(orderRepository, times(1)).findAll(pageable);
     }
+
 }

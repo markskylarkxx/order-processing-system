@@ -1,9 +1,7 @@
 package com.order_service.application.service;
 
 
-import com.inventory_service.grpc.InventoryServiceGrpc;
-import com.inventory_service.grpc.StockRequest;
-import com.inventory_service.grpc.StockResponse;
+import com.inventory_service.grpc.*;
 import com.order_service.presentation.response.ApiResponse;
 import com.order_service.application.dto.OrderDto;
 import com.order_service.application.dto.OrderNotification;
@@ -11,6 +9,11 @@ import com.order_service.domain.Order;
 import com.order_service.domain.OrderRepository;
 import com.order_service.presentation.request.CreateOrder;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.ast.Or;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,8 +44,12 @@ public class OrderService {
                     .build();
 
             StockResponse stockResponse = inventoryStub.checkStock(stockRequest);
+//todo: update the inventory after successful order, paginate the order the order that is coming
 
             if (stockResponse.getQuantity() < request.getQuantity()) {
+
+                System.out.println("Insufficient stock for product " + request.getProductId());
+
                 return ApiResponse.<OrderDto>builder()
                         .status(HttpStatus.BAD_REQUEST.value())
                         .message("Insufficient stock for product " + request.getProductId())
@@ -58,6 +65,14 @@ public class OrderService {
 
             Order savedOrder = orderRepository.save(order);
 
+            //TOdo reduce stock her:
+
+            ReduceStockRequest reduceStockRequest = ReduceStockRequest.newBuilder().
+                    setItemId(request.getProductId()).setQuantity(request.getQuantity()).build();
+            ReduceStockResponse reduceStockResponse = inventoryStub.reduceStock(reduceStockRequest);
+               if (!reduceStockResponse.getSuccess()){
+                   throw  new RuntimeException("Fai to rdeuce stock"  + reduceStockResponse.getMessage());
+               }
             notificationService.sendOrderNotification(
                     new OrderNotification(
                             savedOrder.getId(),
@@ -66,14 +81,13 @@ public class OrderService {
                             savedOrder.getQuantity()
                     )
             );
-
-            OrderDto dto = mapToDto(savedOrder);
+            OrderDto orderDto = mapToDto(order);
 
             return ApiResponse.<OrderDto>builder()
                     .status(HttpStatus.CREATED.value())
                     .message("Order created successfully.")
                     .successful(true)
-                    .data(dto)
+                    .data(orderDto)
                     .build();
 
         } catch (Exception ex) {
@@ -89,9 +103,11 @@ public class OrderService {
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + id));
     }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public Page<Order> getAllOrders(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
+        return orderRepository.findAll(pageable);
     }
+
 
 
     private OrderDto mapToDto(Order order) {

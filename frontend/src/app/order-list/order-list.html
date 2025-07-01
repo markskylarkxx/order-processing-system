@@ -1,5 +1,6 @@
 <h1>Order List</h1>
 <button [routerLink]="['/create-order']">Create New Order</button>
+
 <table>
   <thead>
     <tr>
@@ -18,3 +19,14 @@
     </tr>
   </tbody>
 </table>
+
+<!-- Simple pagination controls -->
+<div *ngIf="totalPages > 1">
+  <button
+    *ngFor="let page of [].constructor(totalPages); let i = index"
+    (click)="goToPage(i)"
+    [disabled]="i === currentPage"
+  >
+    {{ i + 1 }}
+  </button>
+</div>
