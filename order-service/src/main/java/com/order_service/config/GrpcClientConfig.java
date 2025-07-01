@@ -9,13 +9,22 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GrpcClientConfig {
 
-    @Bean
-    public ManagedChannel inventoryChannel() {
+        @Bean   //for local host
+        public ManagedChannel inventoryChannel() {
         return ManagedChannelBuilder
                 .forAddress("127.0.0.1", 9090)
                 .usePlaintext()
                 .build();
     }
+//    @Bean
+//    public ManagedChannel inventoryChannel() {
+//        System.out.println("Creating gRPC channel to inventory-service:9090");
+//
+//        return ManagedChannelBuilder
+//                .forAddress("inventory-service", 9090)
+//                .usePlaintext()
+//                .build();
+//    }
 
     @Bean
     public com.inventory_service.grpc.InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub(ManagedChannel inventoryChannel) {

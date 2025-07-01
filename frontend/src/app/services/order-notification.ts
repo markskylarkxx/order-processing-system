@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import * as Stomp from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { BehaviorSubject } from 'rxjs';
+import environment from '../environment'; 
 
 export interface OrderNotification {
   orderId: number;
@@ -19,7 +20,7 @@ export class OrderNotificationService {
   public orderUpdates$ = this.orderSubject.asObservable();
 
   connect() {
-    const socket = new SockJS('http://localhost:8080/ws-orders');
+    const socket = new SockJS(environment.socketUrl);
     this.stompClient = new Stomp.Client({
       webSocketFactory: () => socket as any,
       debug: (msg) => console.log('[STOMP]', msg),

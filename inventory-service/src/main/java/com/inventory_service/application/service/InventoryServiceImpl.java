@@ -22,7 +22,6 @@ public class InventoryServiceImpl extends InventoryServiceGrpc.InventoryServiceI
         Product product = productRepository.findById(request.getItemId()).orElse(null);
 
         int quantity = (product != null) ? product.getStockQuantity() : 0;
-
         StockResponse response = StockResponse.newBuilder()
                 .setQuantity(quantity)
                 .build();

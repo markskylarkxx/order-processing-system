@@ -3,15 +3,23 @@ package com.order_service.service;
 import com.inventory_service.grpc.InventoryServiceGrpc;
 import com.inventory_service.grpc.StockRequest;
 import com.inventory_service.grpc.StockResponse;
-import com.order_service.presentation.response.ApiResponse;
 import com.order_service.application.dto.OrderDto;
+import com.order_service.application.service.OrderNotificationService;
 import com.order_service.application.service.OrderService;
 import com.order_service.domain.Order;
 import com.order_service.domain.OrderRepository;
 import com.order_service.presentation.request.CreateOrder;
+import com.order_service.presentation.response.ApiResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,10 +32,13 @@ import static org.mockito.Mockito.*;
 class OrderServiceTest {
 
     @Mock
+    private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
+
+    @Mock
     private OrderRepository orderRepository;
 
     @Mock
-    private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
+    private OrderNotificationService notificationService;
 
     @InjectMocks
     private OrderService orderService;
@@ -36,6 +47,7 @@ class OrderServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
     }
+
     @Test
     void createOrder_successful() {
         CreateOrder request = new CreateOrder();
@@ -43,7 +55,7 @@ class OrderServiceTest {
         request.setQuantity(5);
 
         StockResponse mockResponse = StockResponse.newBuilder()
-                .setQuantity(10) // enough stock
+                .setQuantity(10)
                 .build();
 
         when(inventoryStub.checkStock(any(StockRequest.class))).thenReturn(mockResponse);
@@ -66,6 +78,7 @@ class OrderServiceTest {
 
         verify(inventoryStub, times(1)).checkStock(any(StockRequest.class));
         verify(orderRepository, times(1)).save(any(Order.class));
+        verify(notificationService, times(1)).sendOrderNotification(any());
     }
 
     @Test
@@ -88,11 +101,12 @@ class OrderServiceTest {
 
         verify(inventoryStub, times(1)).checkStock(any(StockRequest.class));
         verify(orderRepository, never()).save(any(Order.class));
+        verify(notificationService, never()).sendOrderNotification(any());
     }
 
     @Test
     void createOrder_invalidRequest() {
-        CreateOrder request = new CreateOrder(); // null productId and quantity
+        CreateOrder request = new CreateOrder();
 
         ApiResponse<OrderDto> response = orderService.createOrder(request);
 
@@ -102,6 +116,7 @@ class OrderServiceTest {
 
         verify(inventoryStub, never()).checkStock(any(StockRequest.class));
         verify(orderRepository, never()).save(any(Order.class));
+        verify(notificationService, never()).sendOrderNotification(any());
     }
 
     @Test
@@ -121,6 +136,7 @@ class OrderServiceTest {
 
         verify(inventoryStub, times(1)).checkStock(any(StockRequest.class));
         verify(orderRepository, never()).save(any(Order.class));
+        verify(notificationService, never()).sendOrderNotification(any());
     }
 
     @Test
@@ -158,7 +174,6 @@ class OrderServiceTest {
         verify(orderRepository, times(1)).findById(999L);
     }
 
-
     @Test
     void getAllOrders_returnsList() {
         List<Order> orders = Arrays.asList(
@@ -177,5 +192,4 @@ class OrderServiceTest {
 
         verify(orderRepository, times(1)).findAll();
     }
-
 }

@@ -5,64 +5,84 @@ services:
     image: mysql:8.4
     container_name: mysql
     restart: always
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: letmein
-    ports:
-      - "3307:3306"
     volumes:
-      - mysql-data:/var/lib/mysql
-    networks:
-      - orders-network
+      - ./initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -uroot -pletmein"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - orders-network
+
+  inventory-service:
+    build:
+      context: ./inventory-service # Assuming your inventory-service Dockerfile is in a folder named inventory-service
+      dockerfile: Dockerfile
+    container_name: inventory-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+      - "9090:9090"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/inventory_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: letmein
+    # volumes: # No need for explicit volume if building from context
+    #   - ./inventory-service/target/inventory-service-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    healthcheck: # Health check for gRPC readiness
+      # test: ["CMD-SHELL", "grpc_health_probe -addr=localhost:9090"]
+      test: ["CMD-SHELL", "grpc_health_probe -addr=0.0.0.0:9090"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    entrypoint: ["java", "-jar", "/app/app.jar"] # Removed sleep 10
+    networks:
+      - orders-network
 
   order-service:
-    build: ./order-service
+    build:
+      context: ./order-service # Assuming your order-service Dockerfile is in a folder named order-service
+      dockerfile: Dockerfile
     container_name: order-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      inventory-service: # Added dependency on inventory-service
+        condition: service_healthy # Wait for inventory-service gRPC to be healthy
     ports:
       - "8081:8081"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/order_db
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: letmein
-    depends_on:
-      mysql:
-        condition: service_healthy
-    networks:
-      - orders-network
-
-  inventory-service:
-    build: ./inventory-service
-    container_name: inventory-service
-    ports:
-      - "8082:8082"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/inventory_db
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: letmein
-    depends_on:
-      mysql:
-        condition: service_healthy
+    # volumes: # No need for explicit volume if building from context
+    #   - ./order-service/target/order-service-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    entrypoint: ["java", "-jar", "/app/app.jar"] # Removed sleep 10
     networks:
       - orders-network
 
   frontend:
-    image: nginx:latest
+    image: nginx:alpine
     container_name: frontend
     ports:
       - "80:80"
     volumes:
-      - ./frontend/dist/order-processing-frontend/browser:/usr/share/nginx/html
-      - ./default.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/dist/order-processing-frontend/browser:/usr/share/nginx/html:ro
+      - ./default.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - orders-network
+
+volumes:
+  mysql-data: {}
 
 networks:
   orders-network:
     driver: bridge
-
-volumes:
-  mysql-data:

@@ -25,60 +25,6 @@ public class OrderService {
     private final InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
     private final OrderNotificationService notificationService;
 
-
-//    @Transactional
-//    public ApiResponse<OrderDto> createOrder(CreateOrder request) {
-//        try {
-//            if (request == null || request.getProductId() == null || request.getQuantity() == null) {
-//                return ApiResponse.<OrderDto>builder()
-//                        .status(HttpStatus.BAD_REQUEST.value())
-//                        .message("Invalid request: productId and quantity are required.")
-//                        .successful(false)
-//                        .build();
-//            }
-//
-//            // check stock via gRPC
-//            StockRequest stockRequest = StockRequest.newBuilder()
-//                    .setItemId(request.getProductId()) // corrected field name
-//                    .build();
-//
-//            StockResponse stockResponse = inventoryStub.checkStock(stockRequest);
-//
-//            if (stockResponse.getQuantity() < request.getQuantity()) {
-//                return ApiResponse.<OrderDto>builder()
-//                        .status(HttpStatus.BAD_REQUEST.value())
-//                        .message("Insufficient stock for product " + request.getProductId())
-//                        .successful(false)
-//                        .build();
-//            }
-//
-//            // persist order
-//            Order order = Order.builder()
-//                    .productId(request.getProductId())
-//                    .quantity(request.getQuantity())
-//                    .status("CONFIRMED")
-//                    .build();
-//
-//            orderRepository.save(order);
-//
-//            OrderDto dto = mapToDto(order);
-//
-//            return ApiResponse.<OrderDto>builder()
-//                    .status(HttpStatus.CREATED.value())
-//                    .message("Order created successfully.")
-//                    .successful(true)
-//                    .data(dto)
-//                    .build();
-//
-//        } catch (Exception ex) {
-//            return ApiResponse.<OrderDto>builder()
-//                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-//                    .message("An unexpected error occurred: " + ex.getMessage())
-//                    .successful(false)
-//                    .build();
-//        }
-//    }
-
     @Transactional
     public ApiResponse<OrderDto> createOrder(CreateOrder request) {
         try {
